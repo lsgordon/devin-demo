@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/platform/db/client";
 import type { CurrentUser } from "@/platform/authz/core";
 import { hasPermission } from "@/platform/authz/core";
-import { NotFoundError } from "@/platform/authz/errors";
+import { ForbiddenError, NotFoundError } from "@/platform/authz/errors";
 import type { ScopeRule } from "@/platform/apps/define";
 import { PII_FIELDS, SCOPE_RULES } from "@/platform/apps/registry";
 import { isMasked, maskForUser } from "@/platform/pii/mask";
@@ -38,9 +38,21 @@ function assertNoMaskedPii(model: string, args: Record<string, unknown>) {
   const payloads = [args.data, args.create, args.update].flat().filter(Boolean) as Record<string, unknown>[];
   for (const p of payloads) {
     for (const f of fields) {
-      if (isMasked(p[f])) throw new Error(`Refusing to write masked PII to ${model}.${f}`);
+      const v = p[f];
+      const value = v && typeof v === "object" && "set" in v ? (v as { set: unknown }).set : v;
+      if (isMasked(value)) throw new Error(`Refusing to write masked PII to ${model}.${f}`);
     }
   }
+}
+
+/** groupBy/aggregate results can't be masked per row: refuse to group or min/max on PII without pii:read. */
+function assertNoPiiAggregate(user: CurrentUser, model: string, args: Record<string, unknown>) {
+  const fields = PII_FIELDS.get(model);
+  if (!fields?.length || hasPermission(user, "pii:read")) return;
+  const by = args.by === undefined ? [] : [args.by].flat();
+  const keys = [...by, ...Object.keys((args._min as object) ?? {}), ...Object.keys((args._max as object) ?? {})];
+  const hit = keys.find((k) => fields.includes(k as string));
+  if (hit) throw new ForbiddenError(`Aggregating PII field ${model}.${String(hit)} requires pii:read`);
 }
 
 /**
@@ -61,6 +73,7 @@ export function scopedDb(user: CurrentUser) {
           const scope = scopeWhere(user, rule);
           const a = { ...(args as Record<string, unknown>) };
           if (WRITE_OPS.has(operation)) assertNoMaskedPii(model, a);
+          if (operation === "groupBy" || operation === "aggregate") assertNoPiiAggregate(user, model, a);
           if (operation === "upsert" && scope) throw new Error(`upsert is not allowed on scoped model ${model}`);
           if (SCOPED_OPS.has(operation)) a.where = applyScope(a.where as Record<string, unknown> | undefined, scope);
           let result: unknown;

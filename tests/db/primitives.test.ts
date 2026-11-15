@@ -139,6 +139,16 @@ describe("scopedDb", () => {
     await expect(
       scopedDb(analyst1).exampleRequest.update({ where: { id: masked.id }, data: { idNumber: masked.idNumber } }),
     ).rejects.toThrow(/masked PII/);
+    await expect(
+      scopedDb(analyst1).exampleRequest.update({ where: { id: masked.id }, data: { idNumber: { set: masked.idNumber } } }),
+    ).rejects.toThrow(/masked PII/);
+  });
+
+  it("refuses groupBy/aggregate over PII fields without pii:read", async () => {
+    await expect(scopedDb(analyst1).exampleRequest.groupBy({ by: ["idNumber"] })).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(scopedDb(analyst1).exampleRequest.aggregate({ _max: { dateOfBirth: true } })).rejects.toBeInstanceOf(ForbiddenError);
+    expect(await scopedDb(analyst1).exampleRequest.aggregate({ _sum: { amountCents: true } })).toBeTruthy();
+    expect((await scopedDb(approver1).exampleRequest.groupBy({ by: ["idNumber"] })).length).toBeGreaterThan(0);
   });
 
   it("hides the audit log from users without audit:read", async () => {
