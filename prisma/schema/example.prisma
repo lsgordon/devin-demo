@@ -1,0 +1,24 @@
+// Owned by the reference app (src/apps/example). Each app owns exactly one file like this.
+
+enum ExampleRequestStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+model ExampleRequest {
+  id           String               @id @default(cuid())
+  title        String
+  customerName String               @map("customer_name")
+  dateOfBirth  String               @map("date_of_birth") // PII
+  idNumber     String               @map("id_number") // PII
+  amountCents  Int                  @map("amount_cents")
+  status       ExampleRequestStatus @default(DRAFT)
+  assigneeOid  String               @map("assignee_oid")
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([assigneeOid])
+  @@map("example_request")
+}

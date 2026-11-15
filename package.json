@@ -1,0 +1,49 @@
+{
+  "name": "internal-tools-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "gen": "tsx scripts/generate-registry.ts && tsx scripts/generate-mock-login.ts",
+    "postinstall": "prisma generate && tsx scripts/generate-registry.ts",
+    "predev": "npm run gen",
+    "dev": "next dev",
+    "prebuild": "npm run gen",
+    "build": "next build",
+    "start": "next start",
+    "lint": "npm run gen && eslint .",
+    "typecheck": "npm run gen && tsc --noEmit",
+    "test": "npm run gen && vitest run",
+    "test:e2e": "playwright test",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset --force"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "next": "^15.5.29",
+    "next-auth": "^5.0.0-beta.32",
+    "react": "^19.1.10",
+    "react-dom": "^19.1.10",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^22.20.5",
+    "@types/react": "19.1",
+    "@types/react-dom": "19.1",
+    "dotenv": "^18.0.10",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.29",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^3.2.7"
+  }
+}

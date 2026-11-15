@@ -1,0 +1,55 @@
+// Platform-owned. App PRs must not edit this file; add prisma/schema/<app>.prisma instead.
+
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Append-only. UPDATE/DELETE are rejected by a DB trigger (see migrations).
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorOid      String   @map("actor_oid")
+  actorUsername String   @map("actor_username")
+  action        String
+  entityType    String   @map("entity_type")
+  entityId      String   @map("entity_id")
+  before        Json?
+  after         Json?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([entityType, entityId])
+  @@index([actorOid])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Generic maker-checker request. CHECK (decider_oid <> requester_oid) is enforced in the DB.
+model Approval {
+  id                String         @id @default(cuid())
+  entityType        String         @map("entity_type")
+  entityId          String         @map("entity_id")
+  action            String
+  status            ApprovalStatus @default(PENDING)
+  requesterOid      String         @map("requester_oid")
+  requesterUsername String         @map("requester_username")
+  requestComment    String?        @map("request_comment")
+  deciderOid        String?        @map("decider_oid")
+  deciderUsername   String?        @map("decider_username")
+  decisionComment   String?        @map("decision_comment")
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  decidedAt         DateTime?      @map("decided_at") @db.Timestamptz(3)
+
+  @@index([entityType, entityId])
+  @@index([status])
+  @@map("approval")
+}
