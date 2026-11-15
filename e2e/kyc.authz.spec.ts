@@ -248,3 +248,54 @@ test.describe("auditor is read-only", () => {
     await expectNoRawPii(page, { pagePath: "/audit?entityType=KycCase&entityId=kyc-0002", raw: RAW["kyc-0002"] });
   });
 });
+
+test.describe("concurrency, input hardening and reseeding", () => {
+  test("concurrent recommendations: exactly one wins, one pending approval", async ({ page }) => {
+    await seedKyc(db);
+    await loginAs(page, "kyc.analyst1");
+    const results = await Promise.all(
+      (["APPROVE", "REJECT", "APPROVE"] as const).map((recommendation) => post(page, api("kyc-0001", "/recommendation"), { recommendation })),
+    );
+    expect(results.map((r) => r.status()).sort()).toEqual([200, 409, 409]);
+    expect(await db.approval.count({ where: { entityType: "KycCase", entityId: "kyc-0001", status: "PENDING" } })).toBe(1);
+    expect((await db.kycCase.findUniqueOrThrow({ where: { id: "kyc-0001" } })).status).toBe("PENDING_APPROVAL");
+  });
+
+  test("decide and reassign race: a finalized case is never reassigned or reopened", async ({ page, browser }) => {
+    // kyc-0001 is PENDING_APPROVAL from the previous test.
+    await loginAs(page, "kyc.approver1");
+    const other = await browser.newPage();
+    await loginAs(other, "kyc.approver2");
+    const [decision, reassignment] = await Promise.all([
+      post(page, api("kyc-0001", "/decision"), { decision: "APPROVE" }),
+      post(other, api("kyc-0001", "/assignment"), { assigneeOid: persona("kyc.analyst2").oid }),
+    ]);
+    expect(decision.status()).toBe(200);
+    const final = await db.kycCase.findUniqueOrThrow({ where: { id: "kyc-0001" } });
+    expect(final.status).toBe("APPROVED");
+    if (reassignment.status() !== 200) expect(reassignment.status()).toBe(409);
+    expect((await post(other, api("kyc-0001", "/assignment"), { assigneeOid: persona("kyc.analyst1").oid })).status()).toBe(409);
+    await other.close();
+  });
+
+  test("JSON routes reject non-JSON media types (no simple-request CSRF)", async ({ page }) => {
+    await loginAs(page, "kyc.analyst1");
+    for (const contentType of ["text/plain; charset=application/json", "text/plain", "application/x-www-form-urlencoded"]) {
+      const res = await page.request.post(api("kyc-0002", "/notes"), { data: JSON.stringify({ body: "csrf" }), headers: { "content-type": contentType } });
+      expect(res.status()).toBe(400);
+    }
+    const ok = await page.request.post(api("kyc-0002", "/notes"), { data: JSON.stringify({ body: "ok" }), headers: { "content-type": "Application/JSON; charset=utf-8" } });
+    expect(ok.status()).toBe(200);
+  });
+
+  test("reseeding a case with a pending recommendation leaves it workable", async ({ page }) => {
+    await seedKyc(db);
+    await loginAs(page, "kyc.analyst1");
+    expect((await post(page, api("kyc-0002", "/recommendation"), { recommendation: "REJECT" })).status()).toBe(200);
+    await seedKyc(db);
+    expect(await db.approval.count({ where: { entityType: "KycCase", entityId: "kyc-0002", status: "PENDING" } })).toBe(0);
+    expect((await post(page, api("kyc-0002", "/recommendation"), { recommendation: "APPROVE" })).status()).toBe(200);
+    await loginAs(page, "kyc.approver1");
+    expect((await post(page, api("kyc-0002", "/decision"), { decision: "APPROVE" })).status()).toBe(200);
+  });
+});

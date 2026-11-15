@@ -43,9 +43,13 @@ export function formInput(formData: FormData): Input {
   return Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string"));
 }
 
-/** JSON body only (a cross-site HTML form cannot send application/json without a CORS preflight). */
+/**
+ * JSON body only, with an exact media type: browsers send application/json cross-origin only after a CORS
+ * preflight (which this app never grants), so simple-request bodies (forms, text/plain) are refused.
+ */
 export async function jsonInput(req: Request): Promise<Input> {
-  if (!req.headers.get("content-type")?.includes("application/json")) throw new KycInputError("Content-Type must be application/json");
+  const mediaType = req.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+  if (mediaType !== "application/json") throw new KycInputError("Content-Type must be application/json");
   const body: unknown = await req.json().catch(() => null);
   if (!body || typeof body !== "object" || Array.isArray(body)) throw new KycInputError("Body must be a JSON object");
   return body as Input;
