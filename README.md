@@ -157,6 +157,6 @@ Not built here (out of scope or time-boxed). Each needs an owner before real dat
 
 **Unfinished from this session**
 - SQLite fallback and its append-only trigger equivalent are not implemented (Postgres only via docker compose)
-- Devin Knowledge entries and the Devin-side `new-internal-app` skill need to be created/approved in the
-  Devin org (the conventions are committed in `AGENTS.md` and `docs/playbooks/new-internal-app.md`)
+- Devin-side `new-internal-app` skill and `devin-demo-conventions` rule are saved in the org plugin; keep them in
+  sync with `docs/playbooks/new-internal-app.md` and `AGENTS.md` when conventions change
 - Playwright e2e tests share one database and run serially; per-test DB isolation would make them faster
