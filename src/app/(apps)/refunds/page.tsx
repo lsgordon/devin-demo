@@ -13,7 +13,7 @@ export default async function RefundsList({ searchParams }: { searchParams: Prom
         <p><Link className="button" href="/refunds/new" data-testid="new-refund">New refund request</Link></p>
       )}
 
-      <form className="filters" method="get" data-testid="refund-filters">
+      <form key={JSON.stringify(f)} className="filters" method="get" data-testid="refund-filters">
         <select name="status" defaultValue={f.status ?? ""} aria-label="Status">
           <option value="">All statuses</option>
           {REFUND_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
