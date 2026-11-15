@@ -1,0 +1,60 @@
+// Owned by the flags app (src/apps/flags).
+
+enum FlagEnvironment {
+  dev
+  staging
+  prod
+}
+
+enum FlagChangeKind {
+  CREATE
+  UPDATE
+}
+
+enum FlagChangeStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Flag {
+  id             String          @id @default(cuid())
+  key            String
+  description    String
+  environment    FlagEnvironment
+  enabled        Boolean         @default(false)
+  rolloutPercent Int             @default(0) @map("rollout_percent")
+  /// Optimistic-concurrency counter: every write is `WHERE version = <read version>` and increments it.
+  version        Int             @default(0)
+  createdByOid   String          @map("created_by_oid")
+  updatedByOid   String          @map("updated_by_oid")
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([key, environment])
+  @@map("flag")
+}
+
+/// Proposed change to a prod flag, applied only after a different flags_admin approves it.
+model FlagChangeRequest {
+  id             String           @id @default(cuid())
+  kind           FlagChangeKind
+  status         FlagChangeStatus @default(PENDING)
+  flagId         String?          @map("flag_id")
+  key            String
+  environment    FlagEnvironment
+  description    String
+  enabled        Boolean
+  rolloutPercent Int              @map("rollout_percent")
+  /// Flag as it was when the change was requested (null for CREATE).
+  baseSnapshot   Json?            @map("base_snapshot")
+  approvalId     String?          @map("approval_id")
+  requesterOid   String           @map("requester_oid")
+  requestComment String?          @map("request_comment")
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  decidedAt      DateTime?        @map("decided_at") @db.Timestamptz(3)
+
+  @@index([key, environment, status])
+  @@index([flagId])
+  @@map("flag_change_request")
+}
