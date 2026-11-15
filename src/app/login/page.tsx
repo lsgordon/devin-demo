@@ -7,11 +7,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (await getCurrentUser()) redirect("/");
   const { error } = await searchParams;
   return (
-    <div className="card" style={{ maxWidth: 420, margin: "4rem auto" }}>
-      <h1>Internal tools</h1>
-      <p className="muted">Sign in with your company account.</p>
+    <div className="card center-card">
+      <span className="logo">IT</span>
+      <h1>Sign in to Internal tools</h1>
+      <p>Use your company account to continue.</p>
       {error && (
-        <p role="alert" data-testid="sign-in-error">
+        <p role="alert" className="alert" data-testid="sign-in-error">
           Sign-in didn&apos;t complete (it may have expired). Please try again.
         </p>
       )}

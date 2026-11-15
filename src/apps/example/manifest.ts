@@ -7,7 +7,7 @@ import { defineApp } from "@/platform/apps/define";
 export default defineApp({
   id: "example",
   name: "Example requests",
-  description: "Reference app: scoped list, masked PII, maker-checker approval.",
+  description: "Reference app for builders: scoped list, masked PII and maker-checker approval.",
   route: "/example",
   requiredPermission: "example:read",
   scopes: {

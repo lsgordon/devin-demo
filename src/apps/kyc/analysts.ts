@@ -12,4 +12,4 @@ export const KYC_ANALYSTS: readonly { oid: string; name: string; username: strin
 export const isKycAnalyst = (oid: string) => KYC_ANALYSTS.some((a) => a.oid === oid);
 
 export const analystLabel = (oid: string | null) =>
-  oid === null ? "Unassigned" : (KYC_ANALYSTS.find((a) => a.oid === oid)?.username ?? oid);
+  oid === null ? "Unassigned" : (KYC_ANALYSTS.find((a) => a.oid === oid)?.name ?? "Unknown analyst");

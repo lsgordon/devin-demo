@@ -3,7 +3,7 @@ import { defineApp } from "@/platform/apps/define";
 export default defineApp({
   id: "flags",
   name: "Feature flags",
-  description: "Feature flags per environment. Prod changes need approval by a second flags admin.",
+  description: "Toggle features and roll them out per environment. Production changes need a second admin's approval.",
   route: "/flags",
   requiredPermission: "flags:read",
   scopes: {

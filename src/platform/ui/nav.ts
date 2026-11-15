@@ -7,7 +7,7 @@ export type NavItem = { id: string; name: string; href: string; description?: st
 
 const PLATFORM_LINKS: { id: string; name: string; href: string; permission?: Permission }[] = [
   { id: "audit", name: "Audit log", href: "/audit", permission: "audit:read" },
-  { id: "whoami", name: "Who am I", href: "/whoami" },
+  { id: "whoami", name: "My access", href: "/whoami" },
 ];
 
 /** Apps the user may open (from auto-discovered manifests), filtered by each manifest's requiredPermission. */

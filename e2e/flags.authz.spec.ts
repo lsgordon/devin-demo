@@ -81,7 +81,7 @@ test.describe("dev/staging: flags_admin edits directly", () => {
     await form.getByLabel("Rollout percent").fill("25");
     await page.getByTestId("create-flag-submit").click();
     await expect(page.getByTestId("rollout")).toHaveText("25%");
-    await expect(page.getByTestId("enabled")).toHaveText("on");
+    await expect(page.getByTestId("enabled")).toHaveText("On");
 
     const flag = await db.flag.findUniqueOrThrow({ where: { key_environment: { key, environment: "dev" } } });
     expect(flag.createdByOid).toBe(persona("flags.admin1").oid);
@@ -140,8 +140,8 @@ test.describe("prod: maker-checker by a different flags_admin", () => {
     await page.getByTestId("edit-rollout").fill("20");
     await page.getByLabel("Comment").fill("Start prod rollout");
     await page.getByTestId("edit-submit").click();
-    await expect(page.getByTestId("cr-status")).toHaveText("PENDING");
-    await expect(page.getByTestId("diff-enabled")).toContainText("off");
+    await expect(page.getByTestId("cr-status")).toHaveText("Pending");
+    await expect(page.getByTestId("diff-enabled")).toContainText("Off");
     await expect(page.getByTestId("diff-rolloutPercent")).toContainText("20");
     // Maker sees no approve control...
     await expect(page.getByTestId("approve")).toHaveCount(0);
@@ -160,9 +160,9 @@ test.describe("prod: maker-checker by a different flags_admin", () => {
     await login(page, "flags.admin2");
     await page.goto(`/flags/requests/${cr.id}`);
     await page.getByTestId("approve").click();
-    await expect(page.getByTestId("cr-status")).toHaveText("APPROVED");
+    await expect(page.getByTestId("cr-status")).toHaveText("Approved");
     await page.goto(`/flags/${PROD}`);
-    await expect(page.getByTestId("enabled")).toHaveText("on");
+    await expect(page.getByTestId("enabled")).toHaveText("On");
     await expect(page.getByTestId("rollout")).toHaveText("20%");
 
     // Already decided -> 409.
@@ -213,7 +213,7 @@ test.describe("prod: maker-checker by a different flags_admin", () => {
     await form.getByLabel("Environment").selectOption("prod");
     await form.getByLabel("Rollout percent").fill("5");
     await page.getByTestId("create-flag-submit").click();
-    await expect(page.getByTestId("cr-status")).toHaveText("PENDING");
+    await expect(page.getByTestId("cr-status")).toHaveText("Pending");
     expect(await db.flag.count({ where: { key } })).toBe(0);
     const cr = await db.flagChangeRequest.findFirstOrThrow({ where: { key, status: "PENDING" } });
     expect((await decide(page, cr.id, "APPROVED")).status()).toBe(403);
@@ -296,7 +296,7 @@ test.describe("auditor is read-only", () => {
     expect((await decide(page, changeRequest.id, "APPROVED")).status()).toBe(403);
     expect((await decide(page, changeRequest.id, "REJECTED")).status()).toBe(403);
     await page.goto(`/flags/requests/${changeRequest.id}`);
-    await expect(page.getByTestId("cr-status")).toHaveText("PENDING");
+    await expect(page.getByTestId("cr-status")).toHaveText("Pending");
     await expect(page.getByTestId("approve")).toHaveCount(0);
 
     expect(await db.flag.findMany({ orderBy: { id: "asc" } })).toEqual(before);

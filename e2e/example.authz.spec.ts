@@ -72,13 +72,13 @@ test.describe("maker-checker", () => {
     await login(page, "kyc.analyst1");
     await page.goto("/example/example-0002");
     await page.getByTestId("submit-for-approval").click();
-    await expect(page.getByTestId("status")).toHaveText("PENDING_APPROVAL");
+    await expect(page.getByTestId("status")).toHaveText("Pending approval");
     await expect(page.getByTestId("approve")).toHaveCount(0);
 
     await login(page, "kyc.approver1");
     await page.goto("/example/example-0002");
     await page.getByTestId("approve").click();
-    await expect(page.getByTestId("status")).toHaveText("APPROVED");
+    await expect(page.getByTestId("status")).toHaveText("Approved");
 
     const approval = await db.approval.findFirstOrThrow({ where: { entityId: "example-0002" }, orderBy: { createdAt: "desc" } });
     expect(approval.requesterOid).toBe(persona("kyc.analyst1").oid);
