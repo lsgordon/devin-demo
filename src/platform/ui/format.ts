@@ -20,8 +20,9 @@ const DATE_TIME = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeSt
 const DATE = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
 
 /** Stable server-side timestamp (UTC) for tables and detail pages. */
-export const formatDateTime = (d: Date | string | null | undefined) => (d ? `${DATE_TIME.format(new Date(d))} UTC` : "—");
-export const formatDate = (d: Date | string | null | undefined) => (d ? DATE.format(new Date(d)) : "—");
+const valid = (d: Date | string | null | undefined) => (d && !Number.isNaN(new Date(d).getTime()) ? new Date(d) : null);
+export const formatDateTime = (d: Date | string | null | undefined) => { const v = valid(d); return v ? `${DATE_TIME.format(v)} UTC` : d ? String(d) : "—"; };
+export const formatDate = (d: Date | string | null | undefined) => { const v = valid(d); return v ? DATE.format(v) : d ? String(d) : "—"; };
 
 /** "Testy McTestface" -> "TM"; "kyc.analyst1@example.com" -> "KA". */
 export function initials(nameOrEmail: string): string {

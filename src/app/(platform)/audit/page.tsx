@@ -2,31 +2,13 @@ import Link from "next/link";
 import { requirePermission } from "@/platform/authz";
 import { auditEntityTypes, queryAudit } from "@/platform/audit/query";
 import { PageHeader } from "@/platform/ui/components";
-import { formatDateTime, humanize } from "@/platform/ui/format";
+import { auditChanges } from "@/platform/audit/summary";
+import { PERSONAS } from "@/platform/auth/personas";
+import { formatDateTime } from "@/platform/ui/format";
 
 type Search = { entityType?: string; entityId?: string; actor?: string; action?: string };
-type Json = Record<string, unknown> | null;
-
-const IGNORED = new Set(["id", "updatedAt", "createdAt", "version"]);
-const ENUM = /^[A-Z][A-Z0-9_]+$/;
-const show = (v: unknown) =>
-  v === null || v === undefined ? "—"
-  : typeof v === "object" ? JSON.stringify(v)
-  : typeof v === "boolean" ? (v ? "Yes" : "No")
-  : typeof v === "string" && ENUM.test(v) ? humanize(v)
-  : typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v) ? formatDateTime(v)
-  : String(v);
-
-/** Fields whose value changed between the before/after snapshots (all set fields for creates). */
-function changes(before: unknown, after: unknown): { key: string; from?: unknown; to: unknown }[] {
-  const b = (before && typeof before === "object" ? before : null) as Json;
-  const a = (after && typeof after === "object" ? after : null) as Json;
-  if (!a) return [];
-  return Object.keys(a)
-    .filter((k) => !IGNORED.has(k) && !k.endsWith("Oid") && a[k] !== null)
-    .filter((k) => !b || JSON.stringify(b[k]) !== JSON.stringify(a[k]))
-    .map((k) => ({ key: k, from: b ? b[k] : undefined, to: a[k] }));
-}
+const PERSONA_NAMES = new Map<string, string>(PERSONAS.map((p) => [p.oid, p.name]));
+const nameFor = (oid: string) => PERSONA_NAMES.get(oid);
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<Search> }) {
   const user = await requirePermission("audit:read");
@@ -54,7 +36,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           </thead>
           <tbody>
             {rows.map((r) => {
-              const diff = changes(r.before, r.after);
+              const diff = auditChanges(r.before, r.after, nameFor);
               return (
                 <tr key={r.id} style={{ verticalAlign: "top" }}>
                   <td style={{ whiteSpace: "nowrap" }}>{r.actorUsername}<span className="sub">{formatDateTime(r.createdAt)}</span></td>
@@ -65,9 +47,9 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                       <ul className="changes">
                         {diff.slice(0, 6).map((c) => (
                           <li key={c.key}>
-                            <span className="k">{humanize(c.key)}:</span>{" "}
-                            {c.from !== undefined && <><del>{show(c.from)}</del> → </>}
-                            <ins>{show(c.to)}</ins>
+                            <span className="k">{c.label}:</span>{" "}
+                            {c.from !== undefined && <><del>{c.from}</del> → </>}
+                            <ins>{c.to}</ins>
                           </li>
                         ))}
                         {diff.length > 6 && <li className="muted">+{diff.length - 6} more</li>}
