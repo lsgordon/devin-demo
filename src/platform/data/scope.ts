@@ -17,5 +17,5 @@ export function applyScope<W extends Record<string, unknown> | undefined>(where:
   if (!scope) return where;
   const base = (where ?? {}) as Record<string, unknown>;
   const existingAnd = base.AND === undefined ? [] : Array.isArray(base.AND) ? base.AND : [base.AND];
-  return { ...base, AND: [...existingAnd, scope] } as W;
+  return { ...base, AND: [...existingAnd, scope] } as unknown as W;
 }
