@@ -50,7 +50,8 @@ function assertNoPiiAggregate(user: CurrentUser, model: string, args: Record<str
   const fields = PII_FIELDS.get(model);
   if (!fields?.length || hasPermission(user, "pii:read")) return;
   const by = args.by === undefined ? [] : [args.by].flat();
-  const keys = [...by, ...Object.keys((args._min as object) ?? {}), ...Object.keys((args._max as object) ?? {})];
+  const selected = (sel: unknown) => Object.entries((sel as Record<string, unknown>) ?? {}).filter(([, on]) => on).map(([k]) => k);
+  const keys = [...by, ...selected(args._min), ...selected(args._max)];
   const hit = keys.find((k) => fields.includes(k as string));
   if (hit) throw new ForbiddenError(`Aggregating PII field ${model}.${String(hit)} requires pii:read`);
 }

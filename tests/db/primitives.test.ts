@@ -148,6 +148,7 @@ describe("scopedDb", () => {
     await expect(scopedDb(analyst1).exampleRequest.groupBy({ by: ["idNumber"] })).rejects.toBeInstanceOf(ForbiddenError);
     await expect(scopedDb(analyst1).exampleRequest.aggregate({ _max: { dateOfBirth: true } })).rejects.toBeInstanceOf(ForbiddenError);
     expect(await scopedDb(analyst1).exampleRequest.aggregate({ _sum: { amountCents: true } })).toBeTruthy();
+    expect(await scopedDb(analyst1).exampleRequest.aggregate({ _max: { amountCents: true, idNumber: false } })).toBeTruthy();
     expect((await scopedDb(approver1).exampleRequest.groupBy({ by: ["idNumber"] })).length).toBeGreaterThan(0);
   });
 
