@@ -1,0 +1,53 @@
+// Owned by the kyc app (src/apps/kyc).
+
+enum KycDocumentType {
+  PASSPORT
+  DRIVERS_LICENSE
+  NATIONAL_ID_CARD
+}
+
+enum KycCaseStatus {
+  SUBMITTED
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum KycRecommendation {
+  APPROVE
+  REJECT
+}
+
+model KycCase {
+  id                   String             @id @default(cuid())
+  customerName         String             @map("customer_name")
+  dateOfBirth          String             @map("date_of_birth") // PII
+  nationalId           String             @map("national_id") // PII
+  documentType         KycDocumentType    @map("document_type")
+  riskScore            Int                @map("risk_score")
+  status               KycCaseStatus      @default(SUBMITTED)
+  assigneeOid          String?            @map("assignee_oid")
+  recommendation       KycRecommendation?
+  recommendedByOid     String?            @map("recommended_by_oid")
+  recommendationReason String?            @map("recommendation_reason")
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  notes                KycNote[]
+
+  @@index([assigneeOid])
+  @@index([status])
+  @@map("kyc_case")
+}
+
+model KycNote {
+  id             String   @id @default(cuid())
+  caseId         String   @map("case_id")
+  case           KycCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  authorOid      String   @map("author_oid")
+  authorUsername String   @map("author_username")
+  body           String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([caseId])
+  @@map("kyc_note")
+}
