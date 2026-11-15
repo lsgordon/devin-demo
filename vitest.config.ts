@@ -1,0 +1,13 @@
+import { defineConfig } from "vitest/config";
+import tsconfigPaths from "vite-tsconfig-paths";
+
+export default defineConfig({
+  plugins: [tsconfigPaths()],
+  test: {
+    include: ["tests/**/*.test.ts", "src/**/*.test.ts"],
+    environment: "node",
+    setupFiles: ["dotenv/config"],
+    // DB tests share one Postgres; keep files sequential.
+    fileParallelism: false,
+  },
+});
