@@ -24,6 +24,8 @@ model Flag {
   environment    FlagEnvironment
   enabled        Boolean         @default(false)
   rolloutPercent Int             @default(0) @map("rollout_percent")
+  /// Optimistic-concurrency counter: every write is `WHERE version = <read version>` and increments it.
+  version        Int             @default(0)
   createdByOid   String          @map("created_by_oid")
   updatedByOid   String          @map("updated_by_oid")
   createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)

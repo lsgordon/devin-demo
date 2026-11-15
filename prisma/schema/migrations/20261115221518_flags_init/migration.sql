@@ -15,6 +15,7 @@ CREATE TABLE "flag" (
     "environment" "FlagEnvironment" NOT NULL,
     "enabled" BOOLEAN NOT NULL DEFAULT false,
     "rollout_percent" INTEGER NOT NULL DEFAULT 0,
+    "version" INTEGER NOT NULL DEFAULT 0,
     "created_by_oid" TEXT NOT NULL,
     "updated_by_oid" TEXT NOT NULL,
     "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -53,6 +54,9 @@ CREATE INDEX "flag_change_request_key_environment_status_idx" ON "flag_change_re
 -- CreateIndex
 CREATE INDEX "flag_change_request_flag_id_idx" ON "flag_change_request"("flag_id");
 
+-- Hand-written (re-add if this migration is regenerated).
 -- Rollout percentage must be 0..100 (also validated in src/apps/flags/service.ts).
 ALTER TABLE "flag" ADD CONSTRAINT "flag_rollout_percent_range" CHECK ("rollout_percent" BETWEEN 0 AND 100);
 ALTER TABLE "flag_change_request" ADD CONSTRAINT "flag_change_request_rollout_percent_range" CHECK ("rollout_percent" BETWEEN 0 AND 100);
+-- At most one pending change request per flag key + environment (race-safe maker-checker).
+CREATE UNIQUE INDEX "flag_change_request_one_pending" ON "flag_change_request"("key", "environment") WHERE "status" = 'PENDING';

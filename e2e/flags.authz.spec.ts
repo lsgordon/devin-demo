@@ -235,6 +235,42 @@ test.describe("prod: maker-checker by a different flags_admin", () => {
   });
 });
 
+test.describe("concurrency", () => {
+  test("concurrent dev/staging edits to different fields never silently lose a change", async ({ page }) => {
+    await login(page, "flags.admin1");
+    const key = uniq();
+    const created = await page.request.post("/flags/api/flags", { data: { key, environment: "staging", description: "race", enabled: true, rolloutPercent: 50 } });
+    const id = (await created.json()).flag.id;
+    for (let i = 0; i < 5; i++) {
+      const base = await db.flag.findUniqueOrThrow({ where: { id } });
+      const edits = [{ enabled: !base.enabled }, { rolloutPercent: (base.rolloutPercent + 7) % 100 }];
+      const results = await Promise.all(edits.map((e) => patch(page, id, e)));
+      for (const r of results) expect([200, 409]).toContain(r.status());
+      const final = await db.flag.findUniqueOrThrow({ where: { id } });
+      results.forEach((r, j) => {
+        if (r.status() === 200) expect(final).toMatchObject(edits[j]);
+      });
+      expect(final.version).toBe(base.version + results.filter((r) => r.status() === 200).length);
+    }
+  });
+
+  test("concurrent prod requests for the same key: exactly one is pending, the rest get 409", async ({ page }) => {
+    await login(page, "flags.admin1");
+    const key = uniq();
+    const creates = await Promise.all(
+      [1, 2, 3, 4].map((n) => page.request.post("/flags/api/flags", { data: { key, environment: "prod", description: `race ${n}`, rolloutPercent: n } })),
+    );
+    expect(creates.map((r) => r.status()).sort()).toEqual([202, 409, 409, 409]);
+    expect(await db.flagChangeRequest.count({ where: { key, status: "PENDING" } })).toBe(1);
+
+    const oid = persona("flags.admin1").oid;
+    const { id } = await db.flag.create({ data: { key: uniq(), environment: "prod", description: "race", rolloutPercent: 0, createdByOid: oid, updatedByOid: oid } });
+    const updates = await Promise.all([11, 12, 13].map((n) => patch(page, id, { rolloutPercent: n })));
+    expect(updates.map((r) => r.status()).sort()).toEqual([202, 409, 409]);
+    expect(await db.flagChangeRequest.count({ where: { flagId: id, status: "PENDING" } })).toBe(1);
+  });
+});
+
 test.describe("auditor is read-only", () => {
   test("sees flags and requests but no write/approve controls", async ({ page }) => {
     await login(page, "auditor1");

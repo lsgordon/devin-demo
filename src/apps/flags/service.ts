@@ -175,10 +175,22 @@ export async function updateFlag(user: CurrentUser, id: string, patch: Partial<F
       return { status: "pending_approval", changeRequest };
     }
 
-    const flag = await tx.flag.update({ where: { id }, data: { ...proposed, updatedByOid: user.oid } });
+    const flag = await applyUpdate(tx, before, { ...proposed, updatedByOid: user.oid });
     await audit({ action: "flag.update", entityType: "Flag", entityId: id, before, after: flag });
     return { status: "applied", flag };
   });
+}
+
+const STALE = "The flag was changed by someone else; reload and try again";
+
+/** Compare-and-set on `version` so concurrent writers cannot overwrite each other (loser gets 409). */
+async function applyUpdate(tx: MutationContext["tx"], before: Flag, data: FlagValues & { updatedByOid: string }) {
+  const { count } = await tx.flag.updateMany({
+    where: { id: before.id, version: before.version },
+    data: { ...data, version: { increment: 1 } },
+  });
+  if (count !== 1) throw new ConflictError(STALE);
+  return tx.flag.findUniqueOrThrow({ where: { id: before.id } });
 }
 
 async function openChangeRequest(
@@ -193,16 +205,24 @@ async function openChangeRequest(
   });
   if (pending) throw new ConflictError("A change to this prod flag is already pending approval");
 
-  const created = await tx.flagChangeRequest.create({
-    data: {
-      kind,
-      flagId: flag?.id ?? null,
-      ...values,
-      baseSnapshot: flag ? { ...valuesOf(flag), updatedAt: flag.updatedAt.toISOString() } : Prisma.JsonNull,
-      requesterOid: user.oid,
-      requestComment: comment || null,
-    },
-  });
+  // A partial unique index (one PENDING per key+environment) closes the race between the check above and this insert.
+  const created = await tx.flagChangeRequest
+    .create({
+      data: {
+        kind,
+        flagId: flag?.id ?? null,
+        ...values,
+        baseSnapshot: flag ? { ...valuesOf(flag), version: flag.version } : Prisma.JsonNull,
+        requesterOid: user.oid,
+        requestComment: comment || null,
+      },
+    })
+    .catch((e: unknown) => {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        throw new ConflictError("A change to this prod flag is already pending approval");
+      }
+      throw e;
+    });
   const approval = await requestApproval(ctx, { entityType: CR_ENTITY, entityId: created.id, action: CR_ACTION, comment });
   const changeRequest = await tx.flagChangeRequest.update({ where: { id: created.id }, data: { approvalId: approval.id } });
   await audit({ action: "flag_change_request.create", entityType: CR_ENTITY, entityId: created.id, before: flag, after: changeRequest });
@@ -236,11 +256,11 @@ export async function decideChangeRequest(
         await audit({ action: "flag.create", entityType: "Flag", entityId: flag.id, before: null, after: flag });
       } else {
         const before = await tx.flag.findUniqueOrThrow({ where: { id: crBefore.flagId! } });
-        const base = crBefore.baseSnapshot as { updatedAt?: string } | null;
-        if (base?.updatedAt && before.updatedAt.toISOString() !== base.updatedAt) {
+        const base = crBefore.baseSnapshot as { version?: number } | null;
+        if (base?.version !== before.version) {
           throw new ConflictError("The flag changed after this request was made; request the change again");
         }
-        const after = await tx.flag.update({ where: { id: before.id }, data: { ...values, updatedByOid: user.oid } });
+        const after = await applyUpdate(tx, before, { ...values, updatedByOid: user.oid });
         await audit({ action: "flag.update", entityType: "Flag", entityId: before.id, before, after });
       }
     }
