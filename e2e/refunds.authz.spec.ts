@@ -158,6 +158,11 @@ test.describe("filters and totals", () => {
     await expect(page.getByTestId("total-amount")).toHaveText("$400.00");
     await expect(page.getByTestId("row-refund-0001")).toHaveCount(0);
 
+    await page.getByRole("link", { name: "Clear" }).click();
+    await expect(page).toHaveURL(/\/refunds$/);
+    await expect(page.getByLabel("Status")).toHaveValue("");
+    await expect(page.getByLabel("Order id")).toHaveValue("");
+
     await login(page, "refunds.agent1");
     await page.goto("/refunds?q=ORD-TEST");
     await expect(page.getByTestId("total-count")).toHaveText("3");
@@ -230,6 +235,10 @@ test.describe("creating refunds (refunds_agent)", () => {
     await page.getByLabel("Reason").selectOption("OTHER");
     await page.getByTestId("create-refund").click();
     await expect(page.getByTestId("form-error")).toContainText("Amount");
+    await expect(page.getByLabel("Order id")).toHaveValue("ORD-E2E-FORM");
+    await expect(page.getByLabel("Customer email")).toHaveValue("form@example.com");
+    await expect(page.getByLabel("Amount ($)")).toHaveValue("1.999");
+    await expect(page.getByLabel("Reason")).toHaveValue("OTHER");
     expect(await db.refundRequest.count({ where: { orderId: "ORD-E2E-FORM" } })).toBe(0);
   });
 });
