@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/platform/authz";
 import { appNavFor } from "@/platform/ui/nav";
 import { PageHeader } from "@/platform/ui/components";
+import { humanize } from "@/platform/ui/format";
 
 export default async function Home() {
   const user = await requireUser();
@@ -13,7 +14,7 @@ export default async function Home() {
         title={`Welcome back, ${firstName}`}
         subtitle={
           user.roles.length ? (
-            <>Signed in as {user.roles.map((r) => <span key={r} className="badge">{r}</span>)}</>
+            <>Signed in as {user.roles.map((r) => <span key={r} className="badge">{humanize(r)}</span>)}</>
           ) : (
             "Your account has no roles assigned yet."
           )
