@@ -58,7 +58,7 @@ export default async function RefundsList({ searchParams }: { searchParams: Prom
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} data-testid={`row-${r.id}`}>
-                <td><Link href={`/refunds/${r.id}`} className="mono">{r.orderId}</Link></td>
+                <td><Link href={`/refunds/${r.id}`} className="mono">{r.orderId}</Link><span className="sub mono">{r.id}</span></td>
                 <td data-testid="customer-email">{r.customerEmail}</td>
                 <td className="mono" data-testid="card-last4">{r.cardLast4}</td>
                 <td className="num">{formatCents(r.amountCents)}</td>

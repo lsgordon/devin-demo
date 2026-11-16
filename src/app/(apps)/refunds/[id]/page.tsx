@@ -23,7 +23,7 @@ export default async function RefundDetail({ params }: { params: Promise<{ id: s
           <StatusBadge status={refund.status} testId="status" />
           {refund.autoApproved && <span className="badge" data-testid="auto-approved">Auto-approved</span>}
         </>}
-        subtitle={`Requested by ${refund.createdByUsername} · ${formatDateTime(refund.createdAt)}`}
+        subtitle={`Request ${refund.id} · requested by ${refund.createdByUsername} · ${formatDateTime(refund.createdAt)}`}
         actions={hasPermission(user, "audit:read") && (
           <Link className="button" href={`/audit?entityType=RefundRequest&entityId=${refund.id}`}>View audit trail</Link>
         )}
