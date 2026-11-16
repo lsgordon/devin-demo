@@ -1,10 +1,14 @@
-import Link from "next/link";
 import { hasPermission, requirePermission } from "@/platform/authz";
 import { getChangeRequest } from "@/apps/flags/service";
 import { notFoundOnMissing } from "@/platform/ui/errors";
+import { ApprovalHistory, PageHeader, StatusBadge } from "@/platform/ui/components";
+import { formatDateTime } from "@/platform/ui/format";
+import { EnvBadge } from "@/apps/flags/ui";
 import { decideChangeRequestAction } from "../../actions";
 
-const show = (v: unknown) => (v === null || v === undefined ? "—" : typeof v === "boolean" ? (v ? "on" : "off") : String(v));
+const FIELD_LABEL: Record<string, string> = { description: "Description", enabled: "Enabled", rolloutPercent: "Rollout" };
+const show = (field: string, v: unknown) =>
+  v === null || v === undefined ? "—" : typeof v === "boolean" ? (v ? "On" : "Off") : field === "rolloutPercent" ? `${v}%` : String(v);
 
 export default async function ChangeRequestDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
   const user = await requirePermission("flags:read");
@@ -15,52 +19,55 @@ export default async function ChangeRequestDetail({ params, searchParams }: { pa
   const isOwn = cr.requesterOid === user.oid;
   return (
     <>
-      <p><Link href={current ? `/flags/${current.id}` : "/flags"}>← {current ? "Flag" : "All flags"}</Link></p>
-      <h1>{cr.kind === "CREATE" ? "Create" : "Change"} {cr.key} <span className="badge">{cr.environment}</span></h1>
-      {error && <p className="card" role="alert" data-testid="error">{error}</p>}
-      <p>Status: <strong data-testid="cr-status">{cr.status}</strong></p>
+      <PageHeader
+        back={current ? { href: `/flags/${current.id}`, label: current.key } : { href: "/flags", label: "Feature flags" }}
+        title={<>{cr.kind === "CREATE" ? "New flag" : "Change to"} <span className="mono">{cr.key}</span></>}
+        badges={<><EnvBadge env={cr.environment} /><StatusBadge status={cr.status} testId="cr-status" /></>}
+        subtitle={`Requested ${formatDateTime(cr.createdAt)}`}
+      />
+      {error && <p className="alert" role="alert" data-testid="error">{error}</p>}
 
-      <table data-testid="diff">
-        <thead><tr><th>Field</th><th>Current</th><th>Proposed</th></tr></thead>
-        <tbody>
-          {Object.entries(diff).map(([field, d]) => (
-            <tr key={field} data-testid={`diff-${field}`}>
-              <td>{field}</td>
-              <td>{show(d?.from)}</td>
-              <td><strong>{show(d?.to)}</strong></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="grid-2">
+        <div className="table-wrap">
+          <table data-testid="diff">
+            <thead><tr><th>Field</th><th>Current</th><th>Proposed</th></tr></thead>
+            <tbody>
+              {Object.entries(diff).map(([field, d]) => (
+                <tr key={field} data-testid={`diff-${field}`}>
+                  <td className="muted">{FIELD_LABEL[field] ?? field}</td>
+                  <td>{show(field, d?.from)}</td>
+                  <td><strong>{show(field, d?.to)}</strong></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      {cr.status === "PENDING" && pendingApproval && hasPermission(user, "flags:approve") && (
-        isOwn ? (
-          <p className="card muted" data-testid="own-request">You requested this change; a different flags admin must approve it.</p>
-        ) : (
-          <form action={decideChangeRequestAction} className="card">
-            <p>Requested by {pendingApproval.requesterUsername}{pendingApproval.requestComment ? `: “${pendingApproval.requestComment}”` : ""}</p>
-            <input type="hidden" name="changeRequestId" value={cr.id} />
-            <input name="comment" placeholder="Decision comment" aria-label="Decision comment" />{" "}
-            <button className="primary" name="decision" value="APPROVED" data-testid="approve">Approve</button>{" "}
-            <button className="danger" name="decision" value="REJECTED" data-testid="reject">Reject</button>
-          </form>
-        )
-      )}
+        <div className="stack">
+          {cr.status === "PENDING" && pendingApproval && hasPermission(user, "flags:approve") && (
+            isOwn ? (
+              <p className="notice" data-testid="own-request" style={{ margin: 0 }}>You requested this change; a different flags admin must approve it.</p>
+            ) : (
+              <form action={decideChangeRequestAction} className="card">
+                <h2>Your decision</h2>
+                <p className="muted small" style={{ marginTop: 0 }}>
+                  Requested by {pendingApproval.requesterUsername}{pendingApproval.requestComment ? `: “${pendingApproval.requestComment}”` : ""}
+                </p>
+                <input type="hidden" name="changeRequestId" value={cr.id} />
+                <div className="stack" style={{ gap: ".6rem" }}>
+                  <input name="comment" placeholder="Decision comment" aria-label="Decision comment" />
+                  <div className="form-actions" style={{ marginTop: 0 }}>
+                    <button className="primary" name="decision" value="APPROVED" data-testid="approve">Approve</button>
+                    <button className="danger" name="decision" value="REJECTED" data-testid="reject">Reject</button>
+                  </div>
+                </div>
+              </form>
+            )
+          )}
+        </div>
+      </div>
 
-      <h3>Approval history</h3>
-      <table data-testid="approvals">
-        <thead><tr><th>Status</th><th>Requester</th><th>Decider</th><th>Comment</th></tr></thead>
-        <tbody>
-          {approvals.map((a) => (
-            <tr key={a.id}>
-              <td>{a.status}</td>
-              <td>{a.requesterUsername}</td>
-              <td>{a.deciderUsername ?? "—"}</td>
-              <td>{a.decisionComment ?? a.requestComment ?? ""}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ApprovalHistory approvals={approvals} />
     </>
   );
 }

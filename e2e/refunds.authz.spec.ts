@@ -184,7 +184,7 @@ test.describe("creating refunds (refunds_agent)", () => {
     await page.getByLabel("Reason").selectOption("DAMAGED");
     await page.getByTestId("create-refund").click();
     await expect(page).toHaveURL(/\/refunds\/(?!new)[^/]+$/);
-    await expect(page.getByTestId("status")).toHaveText("APPROVED");
+    await expect(page.getByTestId("status")).toHaveText("Approved");
     await expect(page.getByTestId("auto-approved")).toBeVisible();
 
     const row = await db.refundRequest.findFirstOrThrow({ where: { orderId: input.orderId as string } });
@@ -248,7 +248,7 @@ test.describe("maker-checker (refunds_approver)", () => {
     await login(page, "refunds.agent1");
     const created = await createViaApi(page);
     await page.goto(`/refunds/${created.id}`);
-    await expect(page.getByTestId("status")).toHaveText("PENDING_APPROVAL");
+    await expect(page.getByTestId("status")).toHaveText("Pending approval");
     await expect(page.getByTestId("approve")).toHaveCount(0);
     expect((await decide(page, created.id, "APPROVED")).status()).toBe(403);
     expect((await db.refundRequest.findUniqueOrThrow({ where: { id: created.id } })).status).toBe("PENDING_APPROVAL");
@@ -261,7 +261,7 @@ test.describe("maker-checker (refunds_approver)", () => {
     await login(page, "refunds.approver2");
     await page.goto(`/refunds/${created.id}`);
     await page.getByTestId("approve").click();
-    await expect(page.getByTestId("status")).toHaveText("APPROVED");
+    await expect(page.getByTestId("status")).toHaveText("Approved");
 
     const row = await db.refundRequest.findUniqueOrThrow({ where: { id: created.id } });
     expect(row).toMatchObject({ status: "APPROVED", autoApproved: false, decidedByOid: persona("refunds.approver2").oid });
@@ -310,7 +310,7 @@ test.describe("maker-checker (refunds_approver)", () => {
 
     await login(page, "refunds.approver1");
     await page.goto(`/refunds/${id}`);
-    await expect(page.getByTestId("status")).toHaveText("PENDING_APPROVAL");
+    await expect(page.getByTestId("status")).toHaveText("Pending approval");
     await expect(page.getByTestId("approve")).toHaveCount(0);
     expect((await decide(page, id, "APPROVED")).status()).toBe(403);
     expect((await decide(page, id, "REJECTED")).status()).toBe(403);

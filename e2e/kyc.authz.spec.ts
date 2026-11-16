@@ -147,7 +147,7 @@ test.describe("maker-checker: analyst recommends, approver decides", () => {
     await open(page, "/kyc/kyc-0002");
     await page.getByTestId("recommendation-select").selectOption("APPROVE");
     await page.getByTestId("recommend").click();
-    await expect(page.getByTestId("status")).toHaveText("PENDING_APPROVAL");
+    await expect(page.getByTestId("status")).toHaveText("Pending approval");
     await expect(page.getByTestId("approve")).toHaveCount(0);
     expect((await post(page, api("kyc-0002", "/decision"), { decision: "APPROVE" })).status()).toBe(403);
     expect((await post(page, api("kyc-0002", "/recommendation"), { recommendation: "REJECT" })).status()).toBe(409);
@@ -159,7 +159,7 @@ test.describe("maker-checker: analyst recommends, approver decides", () => {
     await loginAs(page, "kyc.approver1");
     await open(page, "/kyc/kyc-0002");
     await page.getByTestId("approve").click();
-    await expect(page.getByTestId("status")).toHaveText("APPROVED");
+    await expect(page.getByTestId("status")).toHaveText("Approved");
     const decided = await db.approval.findUniqueOrThrow({ where: { id: approval.id } });
     expect(decided.status).toBe("APPROVED");
     expect(decided.deciderOid).toBe(persona("kyc.approver1").oid);
@@ -190,7 +190,7 @@ test.describe("maker-checker: analyst recommends, approver decides", () => {
     await page.goto("/kyc/kyc-0004");
     await expect(page.getByTestId("approve")).toHaveCount(0);
     await expect(page.getByTestId("own-recommendation")).toBeVisible();
-    await expect(page.getByTestId("status")).toHaveText("PENDING_APPROVAL");
+    await expect(page.getByTestId("status")).toHaveText("Pending approval");
 
     await loginAs(page, "kyc.approver2");
     const res = await post(page, api("kyc-0004", "/decision"), { decision: "REJECT", comment: "Agree" });
@@ -217,7 +217,7 @@ test.describe("kyc_approver reassigns", () => {
     await open(page, "/kyc/kyc-0003");
     await page.getByTestId("assignee-select").selectOption(persona("kyc.analyst1").oid);
     await page.getByTestId("reassign").click();
-    await expect(page.getByTestId("assignee")).toHaveText("kyc.analyst1@example.com");
+    await expect(page.getByTestId("assignee")).toHaveText(persona("kyc.analyst1").name);
     expect((await post(page, api("kyc-0003", "/assignment"), { assigneeOid: persona("auditor1").oid })).status()).toBe(400);
     expect((await post(page, api("kyc-0001", "/assignment"), { assigneeOid: persona("kyc.analyst1").oid })).status()).toBe(409);
     expect(await caseActions("kyc-0003", since)).toEqual(["kyc_case.reassign"]);

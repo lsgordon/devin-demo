@@ -4,7 +4,7 @@ import { hasPermission } from "@/platform/authz/core";
 export default defineApp({
   id: "kyc",
   name: "KYC cases",
-  description: "Review customer KYC cases: analyst recommendation, approver final decision (maker-checker).",
+  description: "Review customer identity checks. Analysts recommend, a second approver makes the final call.",
   route: "/kyc",
   requiredPermission: "kyc:read",
   scopes: {

@@ -6,6 +6,8 @@ export const db = new PrismaClient();
 
 /** Log in through the mock OIDC server's persona page (real OIDC code flow, no shortcuts). */
 export async function login(page: Page, key: PersonaKey) {
+  // Leave the current page first: in-flight <Link> prefetches would otherwise re-set the session cookie.
+  await page.goto("about:blank");
   await page.context().clearCookies();
   await page.goto("/login");
   await page.getByTestId("sign-in").click();

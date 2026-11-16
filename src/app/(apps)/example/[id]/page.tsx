@@ -1,6 +1,7 @@
 import { hasPermission, requirePermission } from "@/platform/authz";
 import { getRequest } from "@/apps/example/service";
 import { notFoundOnMissing } from "@/platform/ui/errors";
+import { ApprovalHistory, Fields, PageHeader, StatusBadge } from "@/platform/ui/components";
 import { decideAction, submitAction } from "../actions";
 
 export default async function ExampleDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -10,47 +11,56 @@ export default async function ExampleDetail({ params }: { params: Promise<{ id: 
   const pending = approvals.find((a) => a.status === "PENDING");
   return (
     <>
-      <h1>{request.title}</h1>
-      <div className="card" data-testid="example-detail">
-        <p>Customer: {request.customerName}</p>
-        <p>DOB: <span data-testid="dob">{request.dateOfBirth}</span></p>
-        <p>ID number: <span data-testid="id-number">{request.idNumber}</span></p>
-        <p>Amount: ${(request.amountCents / 100).toFixed(2)}</p>
-        <p>Status: <strong data-testid="status">{request.status}</strong></p>
+      <PageHeader
+        back={{ href: "/example", label: "Example requests" }}
+        title={request.title}
+        badges={<StatusBadge status={request.status} testId="status" />}
+      />
+      <div className="grid-2">
+        <div className="card">
+          <h2>Details</h2>
+          <Fields
+            testId="example-detail"
+            items={[
+              ["Customer", request.customerName],
+              ["Date of birth", <span key="dob" className="mono" data-testid="dob">{request.dateOfBirth}</span>],
+              ["ID number", <span key="idn" className="mono" data-testid="id-number">{request.idNumber}</span>],
+              ["Amount", `$${(request.amountCents / 100).toFixed(2)}`],
+            ]}
+          />
+        </div>
+        <div className="stack">
+          {hasPermission(user, "example:write") && (request.status === "DRAFT" || request.status === "REJECTED") && (
+            <form action={submitAction} className="card">
+              <h2>Submit for approval</h2>
+              <input type="hidden" name="id" value={request.id} />
+              <div className="inline-form">
+                <input name="comment" placeholder="Comment for approver" aria-label="Comment for approver" />
+                <button className="primary" type="submit" data-testid="submit-for-approval">Submit</button>
+              </div>
+            </form>
+          )}
+
+          {pending && hasPermission(user, "example:approve") && (
+            <form action={decideAction} className="card">
+              <h2>Your decision</h2>
+              <p className="muted small" style={{ marginTop: 0 }}>
+                Requested by {pending.requesterUsername}{pending.requestComment ? `: “${pending.requestComment}”` : ""}
+              </p>
+              <input type="hidden" name="approvalId" value={pending.id} />
+              <div className="stack" style={{ gap: ".6rem" }}>
+                <input name="comment" placeholder="Decision comment" aria-label="Decision comment" />
+                <div className="form-actions" style={{ marginTop: 0 }}>
+                  <button className="primary" name="decision" value="APPROVED" data-testid="approve">Approve</button>
+                  <button className="danger" name="decision" value="REJECTED" data-testid="reject">Reject</button>
+                </div>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
 
-      {hasPermission(user, "example:write") && (request.status === "DRAFT" || request.status === "REJECTED") && (
-        <form action={submitAction} className="card">
-          <input type="hidden" name="id" value={request.id} />
-          <input name="comment" placeholder="Comment for approver" />{" "}
-          <button className="primary" type="submit" data-testid="submit-for-approval">Submit for approval</button>
-        </form>
-      )}
-
-      {pending && hasPermission(user, "example:approve") && (
-        <form action={decideAction} className="card">
-          <p>Requested by {pending.requesterUsername}{pending.requestComment ? `: “${pending.requestComment}”` : ""}</p>
-          <input type="hidden" name="approvalId" value={pending.id} />
-          <input name="comment" placeholder="Decision comment" />{" "}
-          <button className="primary" name="decision" value="APPROVED" data-testid="approve">Approve</button>{" "}
-          <button className="danger" name="decision" value="REJECTED" data-testid="reject">Reject</button>
-        </form>
-      )}
-
-      <h3>Approval history</h3>
-      <table data-testid="approvals">
-        <thead><tr><th>Status</th><th>Requester</th><th>Decider</th><th>Comment</th></tr></thead>
-        <tbody>
-          {approvals.map((a) => (
-            <tr key={a.id}>
-              <td>{a.status}</td>
-              <td>{a.requesterUsername}</td>
-              <td>{a.deciderUsername ?? "—"}</td>
-              <td>{a.decisionComment ?? a.requestComment ?? ""}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ApprovalHistory approvals={approvals} />
     </>
   );
 }

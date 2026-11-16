@@ -3,103 +3,156 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Mock Entra ID sign-in (local only)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Test identity provider</title>
   <style>
-    body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; padding: 2rem; }
-    h1 { font-size: 1.3rem; } p { color: #555; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .75rem; max-width: 1000px; }
-    button { width: 100%; text-align: left; padding: .75rem; border: 1px solid #ccd; border-radius: 8px; background: #fff; cursor: pointer; font-size: .9rem; }
-    button:hover { border-color: #0b5cff; } em { color: #0b5cff; font-style: normal; font-size: .8rem; } span { color: #666; font-size: .8rem; }
+    * { box-sizing: border-box; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: #111827; background: #f8fafc; margin: 0; padding: 3rem 1.5rem; -webkit-font-smoothing: antialiased; }
+    .wrap { max-width: 1040px; margin: 0 auto; }
+    header { display: flex; align-items: center; gap: .9rem; margin-bottom: 2rem; }
+    .logo { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 11px; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; font-weight: 700; }
+    h1 { font-size: 1.5rem; margin: 0; letter-spacing: -.01em; }
+    header p { margin: .2rem 0 0; color: #6b7280; }
+    .tag { display: inline-block; margin-left: .5rem; padding: .1rem .5rem; border-radius: 999px; background: #fffaeb; color: #b54708; font-size: .72rem; font-weight: 600; vertical-align: middle; }
+    section { margin-bottom: 1.75rem; }
+    h2 { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; margin: 0 0 .6rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: .75rem; }
+    form { margin: 0; }
+    button { display: flex; align-items: flex-start; gap: .75rem; width: 100%; height: 100%; text-align: left; padding: .9rem 1rem; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; cursor: pointer; font: inherit; color: inherit; box-shadow: 0 1px 2px rgba(16,24,40,.05); transition: border-color .15s, box-shadow .15s; }
+    button:hover { border-color: #93c5fd; box-shadow: 0 4px 12px rgba(37,99,235,.1); }
+    .avatar { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #e0e7ff; color: #3730a3; font-size: .75rem; font-weight: 650; }
+    .who { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+    .who strong { font-size: .92rem; }
+    .email { color: #6b7280; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .role { align-self: flex-start; margin-top: .3rem; padding: .05rem .5rem; border-radius: 999px; background: #eff6ff; color: #1d4ed8; font-size: .72rem; font-weight: 500; }
+    .role.none { background: #f3f4f6; color: #6b7280; }
   </style>
 </head>
 <body>
-  <h1>Mock IdP: pick a persona</h1>
-  <p>Local development only. Issues Entra-shaped tokens (oid, tid, preferred_username, roles) for tenant 11111111-1111-4111-8111-111111111111.</p>
-  <div class="grid">
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000101">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000101&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;kyc.analyst1@example.com&quot;,&quot;name&quot;:&quot;Testy McTestface&quot;,&quot;roles&quot;:[&quot;kyc_analyst&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="kyc.analyst1">
-        <strong>Testy McTestface</strong><br><span>kyc.analyst1@example.com</span><br><em>kyc_analyst</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000102">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000102&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;kyc.analyst2@example.com&quot;,&quot;name&quot;:&quot;Fakey McFakeface&quot;,&quot;roles&quot;:[&quot;kyc_analyst&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="kyc.analyst2">
-        <strong>Fakey McFakeface</strong><br><span>kyc.analyst2@example.com</span><br><em>kyc_analyst</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000201">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000201&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;kyc.approver1@example.com&quot;,&quot;name&quot;:&quot;Approvy McApproveface&quot;,&quot;roles&quot;:[&quot;kyc_approver&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="kyc.approver1">
-        <strong>Approvy McApproveface</strong><br><span>kyc.approver1@example.com</span><br><em>kyc_approver</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000202">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000202&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;kyc.approver2@example.com&quot;,&quot;name&quot;:&quot;Checky McCheckface&quot;,&quot;roles&quot;:[&quot;kyc_approver&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="kyc.approver2">
-        <strong>Checky McCheckface</strong><br><span>kyc.approver2@example.com</span><br><em>kyc_approver</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000301">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000301&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;refunds.agent1@example.com&quot;,&quot;name&quot;:&quot;Refundy McRefundface&quot;,&quot;roles&quot;:[&quot;refunds_agent&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="refunds.agent1">
-        <strong>Refundy McRefundface</strong><br><span>refunds.agent1@example.com</span><br><em>refunds_agent</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000302">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000302&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;refunds.agent2@example.com&quot;,&quot;name&quot;:&quot;Moneyback McTestface&quot;,&quot;roles&quot;:[&quot;refunds_agent&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="refunds.agent2">
-        <strong>Moneyback McTestface</strong><br><span>refunds.agent2@example.com</span><br><em>refunds_agent</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000401">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000401&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;refunds.approver1@example.com&quot;,&quot;name&quot;:&quot;Payout McPayoutface&quot;,&quot;roles&quot;:[&quot;refunds_approver&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="refunds.approver1">
-        <strong>Payout McPayoutface</strong><br><span>refunds.approver1@example.com</span><br><em>refunds_approver</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000402">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000402&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;refunds.approver2@example.com&quot;,&quot;name&quot;:&quot;Ledger McLedgerface&quot;,&quot;roles&quot;:[&quot;refunds_approver&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="refunds.approver2">
-        <strong>Ledger McLedgerface</strong><br><span>refunds.approver2@example.com</span><br><em>refunds_approver</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000501">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000501&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;flags.admin1@example.com&quot;,&quot;name&quot;:&quot;Toggly McToggleface&quot;,&quot;roles&quot;:[&quot;flags_admin&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="flags.admin1">
-        <strong>Toggly McToggleface</strong><br><span>flags.admin1@example.com</span><br><em>flags_admin</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000502">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000502&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;flags.admin2@example.com&quot;,&quot;name&quot;:&quot;Switchy McSwitchface&quot;,&quot;roles&quot;:[&quot;flags_admin&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="flags.admin2">
-        <strong>Switchy McSwitchface</strong><br><span>flags.admin2@example.com</span><br><em>flags_admin</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000601">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000601&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;auditor1@example.com&quot;,&quot;name&quot;:&quot;Audity McAuditface&quot;,&quot;roles&quot;:[&quot;auditor&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="auditor1">
-        <strong>Audity McAuditface</strong><br><span>auditor1@example.com</span><br><em>auditor</em>
-      </button>
-    </form>
-    <form method="post">
-      <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000901">
-      <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000901&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;noroles@example.com&quot;,&quot;name&quot;:&quot;Nobody McNoroles&quot;,&quot;roles&quot;:[],&quot;ver&quot;:&quot;2.0&quot;}">
-      <button type="submit" data-persona="noroles">
-        <strong>Nobody McNoroles</strong><br><span>noroles@example.com</span><br><em>no roles</em>
-      </button>
-    </form>
-  </div>
+<div class="wrap">
+  <header>
+    <div class="logo">IT</div>
+    <div>
+      <h1>Choose a test account <span class="tag">Local only</span></h1>
+      <p>Mock company sign-in for local development. Pick who you want to be; their roles decide what you can see and do.</p>
+    </div>
+  </header>
+  <section>
+    <h2>KYC</h2>
+    <div class="grid">
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000101">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000101&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;kyc.analyst1@example.com&quot;,&quot;name&quot;:&quot;Testy McTestface&quot;,&quot;roles&quot;:[&quot;kyc_analyst&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="kyc.analyst1">
+          <span class="avatar">TM</span>
+          <span class="who"><strong>Testy McTestface</strong><span class="email">kyc.analyst1@example.com</span><span class="role">kyc_analyst</span></span>
+        </button>
+      </form>
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000102">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000102&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;kyc.analyst2@example.com&quot;,&quot;name&quot;:&quot;Fakey McFakeface&quot;,&quot;roles&quot;:[&quot;kyc_analyst&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="kyc.analyst2">
+          <span class="avatar">FM</span>
+          <span class="who"><strong>Fakey McFakeface</strong><span class="email">kyc.analyst2@example.com</span><span class="role">kyc_analyst</span></span>
+        </button>
+      </form>
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000201">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000201&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;kyc.approver1@example.com&quot;,&quot;name&quot;:&quot;Approvy McApproveface&quot;,&quot;roles&quot;:[&quot;kyc_approver&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="kyc.approver1">
+          <span class="avatar">AM</span>
+          <span class="who"><strong>Approvy McApproveface</strong><span class="email">kyc.approver1@example.com</span><span class="role">kyc_approver</span></span>
+        </button>
+      </form>
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000202">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000202&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;kyc.approver2@example.com&quot;,&quot;name&quot;:&quot;Checky McCheckface&quot;,&quot;roles&quot;:[&quot;kyc_approver&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="kyc.approver2">
+          <span class="avatar">CM</span>
+          <span class="who"><strong>Checky McCheckface</strong><span class="email">kyc.approver2@example.com</span><span class="role">kyc_approver</span></span>
+        </button>
+      </form>
+    </div>
+  </section>
+  <section>
+    <h2>Refunds</h2>
+    <div class="grid">
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000301">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000301&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;refunds.agent1@example.com&quot;,&quot;name&quot;:&quot;Refundy McRefundface&quot;,&quot;roles&quot;:[&quot;refunds_agent&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="refunds.agent1">
+          <span class="avatar">RM</span>
+          <span class="who"><strong>Refundy McRefundface</strong><span class="email">refunds.agent1@example.com</span><span class="role">refunds_agent</span></span>
+        </button>
+      </form>
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000302">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000302&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;refunds.agent2@example.com&quot;,&quot;name&quot;:&quot;Moneyback McTestface&quot;,&quot;roles&quot;:[&quot;refunds_agent&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="refunds.agent2">
+          <span class="avatar">MM</span>
+          <span class="who"><strong>Moneyback McTestface</strong><span class="email">refunds.agent2@example.com</span><span class="role">refunds_agent</span></span>
+        </button>
+      </form>
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000401">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000401&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;refunds.approver1@example.com&quot;,&quot;name&quot;:&quot;Payout McPayoutface&quot;,&quot;roles&quot;:[&quot;refunds_approver&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="refunds.approver1">
+          <span class="avatar">PM</span>
+          <span class="who"><strong>Payout McPayoutface</strong><span class="email">refunds.approver1@example.com</span><span class="role">refunds_approver</span></span>
+        </button>
+      </form>
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000402">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000402&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;refunds.approver2@example.com&quot;,&quot;name&quot;:&quot;Ledger McLedgerface&quot;,&quot;roles&quot;:[&quot;refunds_approver&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="refunds.approver2">
+          <span class="avatar">LM</span>
+          <span class="who"><strong>Ledger McLedgerface</strong><span class="email">refunds.approver2@example.com</span><span class="role">refunds_approver</span></span>
+        </button>
+      </form>
+    </div>
+  </section>
+  <section>
+    <h2>Feature flags</h2>
+    <div class="grid">
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000501">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000501&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;flags.admin1@example.com&quot;,&quot;name&quot;:&quot;Toggly McToggleface&quot;,&quot;roles&quot;:[&quot;flags_admin&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="flags.admin1">
+          <span class="avatar">TM</span>
+          <span class="who"><strong>Toggly McToggleface</strong><span class="email">flags.admin1@example.com</span><span class="role">flags_admin</span></span>
+        </button>
+      </form>
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000502">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000502&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;flags.admin2@example.com&quot;,&quot;name&quot;:&quot;Switchy McSwitchface&quot;,&quot;roles&quot;:[&quot;flags_admin&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="flags.admin2">
+          <span class="avatar">SM</span>
+          <span class="who"><strong>Switchy McSwitchface</strong><span class="email">flags.admin2@example.com</span><span class="role">flags_admin</span></span>
+        </button>
+      </form>
+    </div>
+  </section>
+  <section>
+    <h2>Audit and access</h2>
+    <div class="grid">
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000601">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000601&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;auditor1@example.com&quot;,&quot;name&quot;:&quot;Audity McAuditface&quot;,&quot;roles&quot;:[&quot;auditor&quot;],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="auditor1">
+          <span class="avatar">AM</span>
+          <span class="who"><strong>Audity McAuditface</strong><span class="email">auditor1@example.com</span><span class="role">auditor</span></span>
+        </button>
+      </form>
+      <form method="post">
+        <input type="hidden" name="username" value="00000000-0000-4000-8000-000000000901">
+        <input type="hidden" name="claims" value="{&quot;oid&quot;:&quot;00000000-0000-4000-8000-000000000901&quot;,&quot;tid&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;preferred_username&quot;:&quot;noroles@example.com&quot;,&quot;name&quot;:&quot;Nobody McNoroles&quot;,&quot;roles&quot;:[],&quot;ver&quot;:&quot;2.0&quot;}">
+        <button type="submit" data-persona="noroles">
+          <span class="avatar">NM</span>
+          <span class="who"><strong>Nobody McNoroles</strong><span class="email">noroles@example.com</span><span class="role none">no roles</span></span>
+        </button>
+      </form>
+    </div>
+  </section>
+</div>
 </body>
 </html>
