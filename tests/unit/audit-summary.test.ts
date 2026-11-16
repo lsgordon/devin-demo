@@ -11,6 +11,8 @@ describe("audit change summary", () => {
   it("formats real timestamps and enum values", () => {
     expect(displayValue("2026-11-15T10:00:00.000Z")).toBe("Nov 15, 2026, 10:00 AM UTC");
     expect(displayValue("PENDING_APPROVAL")).toBe("Pending approval");
+    expect(displayValue("ABC123")).toBe("ABC123");
+    expect(displayValue("ORD-TEST-0001")).toBe("ORD-TEST-0001");
   });
 
   it("shows reassignment as previous and new assignee, resolving names with an OID fallback", () => {

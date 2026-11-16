@@ -4,7 +4,7 @@ export type Change = { key: string; label: string; from?: string; to: string };
 type Json = Record<string, unknown> | null;
 
 const IGNORED = new Set(["id", "updatedAt", "createdAt", "version"]);
-const ENUM = /^[A-Z][A-Z0-9_]+$/;
+const ENUM = /^[A-Z]+(_[A-Z]+)*$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T[\d:.]+(Z|[+-]\d{2}:\d{2})?$/;
 const isOidKey = (k: string) => k.endsWith("Oid");
 
